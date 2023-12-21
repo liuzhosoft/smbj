@@ -1,5 +1,3 @@
-import com.bmuschko.gradle.docker.tasks.container.*
-import com.bmuschko.gradle.docker.tasks.image.*
 import java.text.SimpleDateFormat
 
 plugins {
@@ -7,13 +5,6 @@ plugins {
   id "jvm-test-suite"
   id "groovy"
   id "jacoco"
-  id "maven-publish"
-  id "signing"
-  id 'pl.allegro.tech.build.axion-release' version '1.15.3'
-  id "com.github.hierynomus.license" version "0.16.1"
-  // id 'ru.vyarus.java-lib' version '2.1.0'
-  id 'ru.vyarus.github-info' version '1.5.0'
-  id "io.github.gradle-nexus.publish-plugin" version "1.3.0"
 }
 
 group = "com.hierynomus"
@@ -26,19 +17,6 @@ repositories {
   maven { url "https://jitpack.io" }
 }
 
-scmVersion {
-  tag {
-    prefix = 'v'
-    versionSeparator = ''
-  }
-  hooks {
-    pre 'fileUpdate', [file: 'README.adoc', pattern: { v, c -> /:smbj_version: .*/}, replacement: { v, c -> ":smbj_version: $v" }]
-    pre 'commit'
-  }
-}
-
-project.version = scmVersion.version
-
 compileJava {
   options.release = 8
 }
@@ -46,35 +24,25 @@ compileJava {
 configurations.implementation.transitive = false
 
 dependencies {
-  implementation SLF4J_API
   implementation BCPROV_JDK15ON
   implementation MBASSADOR
   implementation ASN_ONE
 }
 
-license {
-  header rootProject.file('LICENSE_HEADER')
-  strictCheck true
-  mapping {
-    java = 'SLASHSTAR_STYLE'
-  }
-  excludes(['com/hierynomus/protocol/commons/Base64.java', '**/*.txt', '**/*.properties', "com/hierynomus/security/jce/messagedigest/MD4.java"])
-}
-
 jar {
-    inputs.property("moduleName", moduleName)
+  inputs.property("moduleName", moduleName)
 
-    manifest {
-       attributes 'Automatic-Module-Name': moduleName
-       attributes 'Implenentation-Title': project.name
-       attributes 'Implementation-Version': project.version
-   }
+  manifest {
+    attributes 'Automatic-Module-Name': moduleName
+    attributes 'Implenentation-Title': project.name
+    attributes 'Implementation-Version': project.version
+  }
 }
 
 
 java {
-	withJavadocJar()
-	withSourcesJar()
+  withJavadocJar()
+  withSourcesJar()
 }
 
 // This disables the pedantic doclint feature of JDK8
@@ -83,154 +51,3 @@ if (JavaVersion.current().isJava8Compatible()) {
     options.addStringOption('Xdoclint:none', '-quiet')
   }
 }
-
-testing {
-  suites {
-    configureEach {
-      useJUnitJupiter()
-      dependencies {
-        implementation project()
-        implementation SLF4J_API
-        // implementation GROOVY_ALL
-        runtimeOnly CGLIB_NODEP
-        runtimeOnly OBJENESIS
-        implementation SPOCK_CORE
-        implementation COMMONS_IO
-        implementation "org.mockito:mockito-core:5.4.0"
-        implementation "org.assertj:assertj-core:3.24.2"
-        runtimeOnly LOGBACK_CLASSIC
-      }
-
-      targets {
-        all {
-          testTask.configure {
-            testLogging {
-              exceptionFormat = 'full'
-            }
-            include "**/*Test.*"
-            include "**/*Spec.*"
-            afterSuite { descriptor, result ->
-              def indicator = "\u001B[32m✓\u001b[0m"
-              if (result.failedTestCount > 0) {
-                indicator = "\u001B[31m✘\u001b[0m"
-              }
-              logger.lifecycle("$indicator Test ${descriptor.name}; Executed: ${result.testCount}/\u001B[32m${result.successfulTestCount}\u001B[0m/\u001B[31m${result.failedTestCount}\u001B[0m")
-            }
-          }
-        }
-      }
-    }
-
-    integrationTest(JvmTestSuite) {
-      dependencies {
-        implementation project()
-        implementation "ch.qos.logback:logback-classic:1.3.8"
-        implementation 'org.testcontainers:testcontainers:1.19.0'
-        implementation 'org.testcontainers:junit-jupiter:1.19.0'
-        implementation 'org.apache.commons:commons-compress:1.24.0'
-      }
-
-      sources {
-        java {
-          srcDirs = ['src/it/java']
-        }
-        groovy {
-          srcDirs = ['src/it/groovy']
-        }
-
-        resources {
-          srcDirs = ['src/it/resources']
-        }
-      }
-
-      targets {
-        all {
-          testTask.configure {
-            shouldRunAfter(test)
-          }
-        }
-      }
-    }
-  }
-}
-
-project.tasks.compileGroovy.onlyIf { false }
-
-github {
-  user 'hierynomus'
-  license 'Apache'
-}
-
-publishing {
-	publications {
-		maven(MavenPublication) {
-			from(components.java)
-		}
-	}
-}
-
-project.signing {
-  required { project.gradle.taskGraph.hasTask("release") }
-	sign publishing.publications.maven
-
-  if (project.hasProperty("signingKeyId") || project.hasProperty("signingKey")) {
-		def signingKeyId = project.findProperty("signingKeyId")
-		def signingKey = project.findProperty("signingKey")
-		def signingPassword = project.findProperty("signingPassword")
-		if (signingKeyId) {
-			useInMemoryPgpKeys(signingKeyId, signingKey, signingPassword)
-		} else if (signingKey) {
-			useInMemoryPgpKeys(signingKey, signingPassword)
-		}
-	}
-}
-
-project.plugins.withType(MavenPublishPlugin).all {
-	PublishingExtension publishing = project.extensions.getByType(PublishingExtension)
-	publishing.publications.withType(MavenPublication).all { mavenPublication ->
-		mavenPublication.pom {
-			name = "${project.name}"
-			description = "SMB2 protocol library for communication with Windows servers"
-			url = "https://github.com/hierynomus/smbj"
-			licenses {
-				license {
-					name = "The Apache License, Version 2.0"
-					url = "https://www.apache.org/licenses/LICENSE-2.0"
-				}
-			}
-			developers {
-				developer {
-					id = "hierynomus"
-					name = "Jeroen van Erp"
-					email = "jeroen@hierynomus.com"
-				}
-			}
-      scm {
-        url = "https://github.com/hierynomus/${project.name}"
-        connection = "scm:git@github.com:hierynomus/${project.name}.git"
-        developerConnection = "scm:git@github.com:hierynomus/${project.name}.git"
-      }
-		}
-	}
-}
-
-nexusPublishing {
-	repositories {
-		sonatype()    //sonatypeUsername and sonatypePassword properties are used automatically
-	}
-
-	connectTimeout = Duration.ofMinutes(3)
-	clientTimeout = Duration.ofMinutes(3)
-}
-
-jacocoTestReport {
-    reports {
-        xml.required = true
-        html.required = true
-    }
-}
-
-project.tasks.release.dependsOn([project.tasks.integrationTest, project.tasks.build])
-
-project.tasks.jacocoTestReport.dependsOn(project.tasks.test)
-project.tasks.check.dependsOn(project.tasks.jacocoTestReport)

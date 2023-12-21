@@ -24,6 +24,7 @@ test-output/
 *.pdf
 .vscode/
 .java-version
+local.properties
 
 .metals
 .bloop
