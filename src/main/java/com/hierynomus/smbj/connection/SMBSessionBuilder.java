@@ -242,6 +242,9 @@ public class SMBSessionBuilder {
     private void validateAndSetSigning(BuilderContext ctx, SessionContext context) {
         boolean requireMessageSigning = config.isSigningRequired();
         boolean connectionSigningRequired = connection.getConnectionContext().isServerRequiresSigning();
+        // custom start
+        connectionSigningRequired = false;
+        // custom end
 
         // If the global setting RequireMessageSigning is set to TRUE or
         // Connection.RequireSigning is set to TRUE then Session.SigningRequired MUST be
