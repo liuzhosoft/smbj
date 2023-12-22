@@ -27,6 +27,7 @@ android {
 
 dependencies {
     // smbj 需要
+    implementation SLF4J_API
     implementation BCPROV_JDK15ON
     implementation MBASSADOR
     implementation ASN_ONE
