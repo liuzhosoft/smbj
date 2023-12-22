@@ -59,18 +59,6 @@ public final class SmbConfig {
 
     private static final TransportLayerFactory<SMBPacketData<?>, SMBPacket<?, ?>> DEFAULT_TRANSPORT_LAYER_FACTORY = new DirectTcpTransportFactory();
 
-    private static final boolean ANDROID;
-    static {
-        boolean android;
-        try {
-            Class.forName("android.os.Build");
-            android = true;
-        } catch (ClassNotFoundException e) {
-            android = false;
-        }
-        ANDROID = android;
-    }
-
     private Set<SMB2Dialect> dialects;
     private List<Factory.Named<Authenticator>> authenticators;
     private SocketFactory socketFactory;
@@ -128,17 +116,7 @@ public final class SmbConfig {
 
     private static List<Factory.Named<Authenticator>> getDefaultAuthenticators() {
         List<Factory.Named<Authenticator>> authenticators = new ArrayList<>();
-
-        if (!ANDROID) {
-            try {
-                Object spnegoFactory = Class.forName("com.hierynomus.smbj.auth.SpnegoAuthenticator$Factory").newInstance();
-                authenticators.add((Factory.Named<Authenticator>)spnegoFactory);
-            } catch (InstantiationException | IllegalAccessException | ClassNotFoundException | ClassCastException e) {
-                throw new SMBRuntimeException(e);
-            }
-        }
         authenticators.add(new NtlmAuthenticator.Factory());
-
         return authenticators;
     }
 
@@ -257,6 +235,7 @@ public final class SmbConfig {
      *
      * @deprecated Moved into getNtlmConfig().getWorkStationName()
      */
+    @Deprecated
     public String getWorkStationName() {
         return getNtlmConfig().getWorkstationName();
     }
@@ -489,8 +468,9 @@ public final class SmbConfig {
          * Set the workstation name to be used in the NTLM authentication.
          *
          * @deprecated Moved into
-         *             withNtlmConfig(NtlmConfig.builder().withWorkstationName(..).build())
+         * withNtlmConfig(NtlmConfig.builder().withWorkstationName(..).build())
          */
+        @Deprecated
         public Builder withWorkStationName(String workStationName) {
             ntlmConfigBuilder.withWorkstationName(workStationName);
             return this;

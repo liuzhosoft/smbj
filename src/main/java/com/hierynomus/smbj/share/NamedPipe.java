@@ -24,6 +24,7 @@ import com.hierynomus.smb.SMBBuffer;
 import com.hierynomus.smbj.common.SMBRuntimeException;
 import com.hierynomus.smbj.common.SmbPath;
 import com.hierynomus.smbj.io.ArrayByteChunkProvider;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -75,6 +76,13 @@ public class NamedPipe extends Open<PipeShare> {
     public int read(byte[] buffer) {
         return read(buffer, 0, buffer.length);
     }
+
+    // custom start
+    public byte[] read() {
+        SMB2ReadResponse response = share.read(fileId, 0, share.getReadBufferSize());
+        return response.getData();
+    }
+    // custom end
 
     /**
      * Read data from this pipe into the given buffer.
