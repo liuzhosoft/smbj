@@ -7,6 +7,7 @@ copy源码之后更改记录如下：
 1. com.hierynomus.smbj.connection.SMBSessionBuilder.validateAndSetSigning()方法内connectionSigningRequired的值判断，写死为false
 2. 删除不影响任何逻辑的冗余代码(auth包下GSSAuthentication相关代码)
 3. NamedPipe中增加一个自定义read方法
+4. com.hierynomus.smbj.session.Session 内对SMB2链接不进行加密处理
 
 
 
