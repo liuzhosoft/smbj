@@ -319,7 +319,7 @@ public class Session implements AutoCloseable {
         }
 
         SecretKey signingKey = getSigningKey(packet.getHeader(), true);
-        if (signingKey == null) {
+        if (sessionContext.isSigningRequired() && signingKey == null) {
             throw new TransportException("Message signing is required, but no signing key is negotiated");
         }
 
