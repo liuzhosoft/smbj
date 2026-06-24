@@ -8,6 +8,7 @@ copy源码之后更改记录如下：
 2. 删除不影响任何逻辑的冗余代码(auth包下GSSAuthentication相关代码)
 3. NamedPipe中增加一个自定义read方法
 4. com.hierynomus.smbj.session.Session 内对SMB2链接不进行加密处理
+5. com.hierynomus.smbj.connection.SMBSessionBuilder 在认证成功分支内注册Session，避免已签名响应校验时找不到Session
 
 
 

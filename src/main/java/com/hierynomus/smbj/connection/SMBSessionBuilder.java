@@ -118,7 +118,6 @@ public class SMBSessionBuilder {
 
             Session session = setupSession(ctx);
             logger.info("Successfully authenticated {} on {}, session is {}", authContext.getUsername(), connection.getRemoteHostname(), session.getSessionId());
-            sessionTable.registerSession(session.getSessionId(), session);
             return session;
         } catch (SpnegoException | IOException e) {
             throw new SMBRuntimeException(e);
@@ -174,6 +173,7 @@ public class SMBSessionBuilder {
             deriveKeys(response, dialect, context);
 
             context.established(response);
+            sessionTable.registerSession(session.getSessionId(), session);
             return session;
         }
     }
