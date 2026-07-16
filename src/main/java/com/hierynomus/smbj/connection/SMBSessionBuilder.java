@@ -285,26 +285,36 @@ public class SMBSessionBuilder {
     }
 
     private void deriveKeys(SMB2SessionSetup response, SMB2Dialect dialect, SessionContext context) {
-        if (dialect.isSmb3x() &&
-            !response.getSessionFlags().contains(SMB2SessionSetup.SMB2SessionFlags.SMB2_SESSION_FLAG_IS_NULL) &&
+        if (!dialect.isSmb3x()) {
+            return;
+        }
+
+        SecretKey sessionKey = context.getSessionKey();
+        if (sessionKey == null) {
+            // 匿名或访客认证不会协商会话密钥，服务端未返回对应标记时也不能继续派生签名和加密密钥。
+            logger.debug("Skipping SMB3 key derivation because no session key is available");
+            return;
+        }
+
+        if (!response.getSessionFlags().contains(SMB2SessionSetup.SMB2SessionFlags.SMB2_SESSION_FLAG_IS_NULL) &&
             !response.getSessionFlags().contains(SMB2SessionSetup.SMB2SessionFlags.SMB2_SESSION_FLAG_IS_GUEST)) {
             // derive signingKey
             if (dialect == SMB2Dialect.SMB_3_1_1) {
-                context.setSigningKey(deriveKey(context.getSessionKey(), KDF_SIGN_LABEL_SMB311, context.getPreauthIntegrityHashValue(), AES_128_CMAC_ALGORITHM));
+                context.setSigningKey(deriveKey(sessionKey, KDF_SIGN_LABEL_SMB311, context.getPreauthIntegrityHashValue(), AES_128_CMAC_ALGORITHM));
             } else {
-                context.setSigningKey(deriveKey(context.getSessionKey(), KDF_SIGN_LABEL, KDF_SIGN_CONTEXT, AES_128_CMAC_ALGORITHM));
+                context.setSigningKey(deriveKey(sessionKey, KDF_SIGN_LABEL, KDF_SIGN_CONTEXT, AES_128_CMAC_ALGORITHM));
             }
             // derive other key if encryption supported
             if (connectionContext.supportsEncryption()) {
                 String alg = connectionContext.getCipherId().getAlgorithmName();
                 if (dialect == SMB2Dialect.SMB_3_1_1) {
-                    context.setEncryptionKey(deriveKey(context.getSessionKey(), KDF_ENC_LABEL_SMB311, context.getPreauthIntegrityHashValue(), alg));
-                    context.setDecryptionKey(deriveKey(context.getSessionKey(), KDF_DEC_LABEL_SMB311, context.getPreauthIntegrityHashValue(), alg));
-                    context.setApplicationKey(deriveKey(context.getSessionKey(), KDF_APP_LABEL_SMB311, context.getPreauthIntegrityHashValue(), alg));
+                    context.setEncryptionKey(deriveKey(sessionKey, KDF_ENC_LABEL_SMB311, context.getPreauthIntegrityHashValue(), alg));
+                    context.setDecryptionKey(deriveKey(sessionKey, KDF_DEC_LABEL_SMB311, context.getPreauthIntegrityHashValue(), alg));
+                    context.setApplicationKey(deriveKey(sessionKey, KDF_APP_LABEL_SMB311, context.getPreauthIntegrityHashValue(), alg));
                 } else {
-                    context.setEncryptionKey(deriveKey(context.getSessionKey(), KDF_ENCDEC_LABEL, KDF_ENC_CONTEXT, alg));
-                    context.setDecryptionKey(deriveKey(context.getSessionKey(), KDF_ENCDEC_LABEL, KDF_DEC_CONTEXT, alg));
-                    context.setApplicationKey(deriveKey(context.getSessionKey(), KDF_APP_LABEL, KDF_APP_CONTEXT, alg));
+                    context.setEncryptionKey(deriveKey(sessionKey, KDF_ENCDEC_LABEL, KDF_ENC_CONTEXT, alg));
+                    context.setDecryptionKey(deriveKey(sessionKey, KDF_ENCDEC_LABEL, KDF_DEC_CONTEXT, alg));
+                    context.setApplicationKey(deriveKey(sessionKey, KDF_APP_LABEL, KDF_APP_CONTEXT, alg));
                 }
             }
         }

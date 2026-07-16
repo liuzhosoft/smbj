@@ -9,6 +9,7 @@ copy源码之后更改记录如下：
 3. NamedPipe中增加一个自定义read方法
 4. com.hierynomus.smbj.session.Session 内对SMB2链接不进行加密处理
 5. com.hierynomus.smbj.connection.SMBSessionBuilder 在认证成功分支内注册Session，避免已签名响应校验时找不到Session
+6. com.hierynomus.smbj.connection.SMBSessionBuilder 仅在存在SessionKey时派生SMB3密钥，兼容服务端未正确标记匿名或访客会话的情况
 
 
 
